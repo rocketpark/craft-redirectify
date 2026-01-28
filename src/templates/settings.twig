@@ -1,0 +1,72 @@
+{% extends "_layouts/cp" %}
+{% import "_includes/forms" as forms %}
+
+{% set title = "Redirectify Settings" %}
+{% set selectedSubnavItem = "settings" %}
+
+{% block content %}
+    <form method="post" accept-charset="UTF-8">
+        {{ csrfInput() }}
+        {{ actionInput('redirectify/settings/save') }}
+        {{ redirectInput('redirectify/settings') }}
+
+        <div id="fields">
+            <h2>404 Tracking</h2>
+
+            {{ forms.lightswitchField({
+                label: "Track 404 Statistics"|t('redirectify'),
+                instructions: "Log 404 errors so you can create redirects for them later."|t('redirectify'),
+                id: 'trackStatistics',
+                name: 'trackStatistics',
+                on: settings.trackStatistics,
+            }) }}
+
+            {{ forms.textField({
+                label: "Maximum Statistics to Store"|t('redirectify'),
+                instructions: "Older 404 records will be automatically deleted when this limit is reached."|t('redirectify'),
+                id: 'maxStatistics',
+                name: 'maxStatistics',
+                value: settings.maxStatistics,
+                type: 'number',
+                min: 100,
+                max: 10000,
+            }) }}
+
+            <hr>
+
+            <h2>URL Handling</h2>
+
+            {{ forms.lightswitchField({
+                label: "Strip Query Strings from 404s"|t('redirectify'),
+                instructions: "Remove query strings before checking for redirects and logging 404s."|t('redirectify'),
+                id: 'stripQueryStrings',
+                name: 'stripQueryStrings',
+                on: settings.stripQueryStrings,
+            }) }}
+
+            {{ forms.lightswitchField({
+                label: "Preserve Query Strings"|t('redirectify'),
+                instructions: "Pass query strings through to the destination URL when redirecting."|t('redirectify'),
+                id: 'preserveQueryStrings',
+                name: 'preserveQueryStrings',
+                on: settings.preserveQueryStrings,
+            }) }}
+
+            <hr>
+
+            <h2>Automatic Redirects</h2>
+
+            {{ forms.lightswitchField({
+                label: "Create Entry Redirects"|t('redirectify'),
+                instructions: "Automatically create redirects when an entry's slug changes."|t('redirectify'),
+                id: 'createEntryRedirects',
+                name: 'createEntryRedirects',
+                on: settings.createEntryRedirects,
+            }) }}
+        </div>
+
+        <div class="buttons">
+            <button type="submit" class="btn submit">Save</button>
+        </div>
+    </form>
+{% endblock %}

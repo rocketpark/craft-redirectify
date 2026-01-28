@@ -1,0 +1,45 @@
+{
+    "name": "rocket-park/craft-redirectify",
+    "description": "A comprehensive redirect manager plugin for Craft CMS. Manage 301/302 redirects, track 404 errors, and automatically handle entry slug changes.",
+    "type": "craft-plugin",
+    "version": "1.0.0",
+    "keywords": [
+        "craftcms",
+        "cms",
+        "craft",
+        "redirect",
+        "301",
+        "302",
+        "404",
+        "seo",
+        "url-management",
+        "regex"
+    ],
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Rocket Park",
+            "homepage": "https://github.com/rocketpark"
+        }
+    ],
+    "support": {
+        "docs": "https://github.com/rocketpark/craft-redirectify/blob/main/README.md",
+        "issues": "https://github.com/rocketpark/craft-redirectify/issues"
+    },
+    "require": {
+        "php": ">=8.0.2",
+        "craftcms/cms": "^4.0 || ^5.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "rocketpark\\redirectify\\": "src/"
+        }
+    },
+    "extra": {
+        "name": "Redirectify",
+        "handle": "redirectify",
+        "hasCpSettings": true,
+        "hasCpSection": true,
+        "class": "rocketpark\\redirectify\\Plugin"
+    }
+}

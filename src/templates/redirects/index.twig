@@ -1,0 +1,108 @@
+{% extends "_layouts/cp" %}
+{% import "_includes/forms" as forms %}
+
+{% set title = "Redirects" %}
+{% set selectedSubnavItem = "redirects" %}
+
+{% block actionButton %}
+    <div class="buttons">
+        <a href="{{ url('redirectify/redirects/export') }}" class="btn">Export CSV</a>
+        <button type="button" class="btn" id="import-btn">Import CSV</button>
+        <a href="{{ url('redirectify/redirects/new') }}" class="btn submit">New Redirect</a>
+    </div>
+{% endblock %}
+
+{% block content %}
+    {% if redirects|length %}
+        <div class="tableview" style="overflow-x: auto;">
+            <table class="data fullwidth">
+                <thead>
+                    <tr>
+                        <th scope="col">Source URL</th>
+                        <th scope="col">Destination URL</th>
+                        <th scope="col" style="width: 80px;">Type</th>
+                        <th scope="col" style="width: 70px;">Status</th>
+                        <th scope="col" style="width: 70px;">Hits</th>
+                        <th scope="col" style="width: 100px;">Last Hit</th>
+                        <th scope="col" style="width: 70px;">Enabled</th>
+                        <th scope="col" style="width: 80px;"></th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for redirect in redirects %}
+                    <tr data-id="{{ redirect.id }}">
+                        <td>
+                            <a href="{{ url('redirectify/redirects/' ~ redirect.id) }}">
+                                <code>{{ redirect.sourceUrl }}</code>
+                            </a>
+                        </td>
+                        <td>
+                            <code>{{ redirect.destinationUrl }}</code>
+                        </td>
+                        <td>
+                            <span class="status {{ redirect.matchType == 'exact' ? 'green' : 'blue' }}"></span>
+                            {{ redirect.matchType == 'exact' ? 'Exact' : 'Regex' }}
+                        </td>
+                        <td>{{ redirect.statusCode }}</td>
+                        <td>{{ redirect.hitCount }}</td>
+                        <td>
+                            {% if redirect.lastHit %}
+                                {{ redirect.lastHit|date('M j, Y g:i a') }}
+                            {% else %}
+                                <span class="light">Never</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <span class="status {{ redirect.enabled ? 'enabled' : 'disabled' }}"></span>
+                        </td>
+                        <td class="thin action">
+                            <button class="btn small" onclick="deleteRedirect({{ redirect.id }})">Delete</button>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        </div>
+    {% else %}
+        <p>No redirects yet. <a href="{{ url('redirectify/redirects/new') }}">Create one</a>.</p>
+    {% endif %}
+
+    {# Import Modal #}
+    <form id="import-form" method="post" accept-charset="UTF-8" enctype="multipart/form-data" style="display:none;">
+        {{ csrfInput() }}
+        {{ actionInput('redirectify/redirects/import') }}
+        {{ redirectInput('redirectify/redirects') }}
+        
+        <input type="file" name="file" accept=".csv" required>
+    </form>
+
+    {% js %}
+        document.getElementById('import-btn').addEventListener('click', function() {
+            var form = document.getElementById('import-form');
+            var fileInput = form.querySelector('input[type="file"]');
+            fileInput.click();
+        });
+
+        document.querySelector('#import-form input[type="file"]').addEventListener('change', function() {
+            if (this.files.length > 0) {
+                document.getElementById('import-form').submit();
+            }
+        });
+
+        function deleteRedirect(id) {
+            if (confirm('Are you sure you want to delete this redirect?')) {
+                Craft.sendActionRequest('POST', 'redirectify/redirects/delete', {
+                    data: { id: id }
+                }).then(function(response) {
+                    if (response.data.success) {
+                        location.reload();
+                    } else {
+                        Craft.cp.displayError('Could not delete redirect.');
+                    }
+                }).catch(function(error) {
+                    Craft.cp.displayError('Could not delete redirect.');
+                });
+            }
+        }
+    {% endjs %}
+{% endblock %}

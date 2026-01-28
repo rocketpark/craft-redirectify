@@ -1,0 +1,112 @@
+{% extends "_layouts/cp" %}
+{% import "_includes/forms" as forms %}
+
+{% set title = isNew ? "New Redirect" : "Edit Redirect" %}
+{% set selectedSubnavItem = "redirects" %}
+
+{% block content %}
+    <form method="post" accept-charset="UTF-8">
+        {{ csrfInput() }}
+        {{ actionInput('redirectify/redirects/save') }}
+        {{ redirectInput('redirectify/redirects') }}
+        
+        {% if redirect.id %}
+            <input type="hidden" name="redirectId" value="{{ redirect.id }}">
+        {% endif %}
+
+        <div id="fields">
+            {# Site Selection #}
+            {% if sites|length > 1 %}
+                {{ forms.selectField({
+                    label: "Site"|t('redirectify'),
+                    instructions: "Which site should this redirect apply to? Leave empty for all sites."|t('redirectify'),
+                    id: 'siteId',
+                    name: 'siteId',
+                    value: redirect.siteId,
+                    options: [{label: 'All Sites', value: ''}]|merge(sites|map(s => {label: s.name, value: s.id})),
+                }) }}
+            {% endif %}
+
+            {# Source URL #}
+            {{ forms.textField({
+                label: "Source URL"|t('redirectify'),
+                instructions: "The URL pattern to redirect from. Use relative URLs (e.g., /old-page). For regex, use patterns like ^/blog/(.*)$"|t('redirectify'),
+                id: 'sourceUrl',
+                name: 'sourceUrl',
+                value: redirect.sourceUrl,
+                required: true,
+                errors: redirect.getErrors('sourceUrl'),
+            }) }}
+
+            {# Destination URL #}
+            {{ forms.textField({
+                label: "Destination URL"|t('redirectify'),
+                instructions: "The URL to redirect to. Can be relative (/new-page) or absolute (https://example.com/page). For regex, use $1, $2 for captured groups."|t('redirectify'),
+                id: 'destinationUrl',
+                name: 'destinationUrl',
+                value: redirect.destinationUrl,
+                required: true,
+                errors: redirect.getErrors('destinationUrl'),
+            }) }}
+
+            {# Match Type #}
+            {{ forms.selectField({
+                label: "Match Type"|t('redirectify'),
+                instructions: "How should the source URL be matched?"|t('redirectify'),
+                id: 'matchType',
+                name: 'matchType',
+                value: redirect.matchType,
+                options: matchTypeOptions,
+            }) }}
+
+            {# Status Code #}
+            {{ forms.selectField({
+                label: "Redirect Type"|t('redirectify'),
+                instructions: "301 for permanent redirects (SEO friendly), 302 for temporary redirects."|t('redirectify'),
+                id: 'statusCode',
+                name: 'statusCode',
+                value: redirect.statusCode,
+                options: statusCodeOptions,
+            }) }}
+
+            {# Enabled #}
+            {{ forms.lightswitchField({
+                label: "Enabled"|t('redirectify'),
+                instructions: "Whether this redirect is active."|t('redirectify'),
+                id: 'enabled',
+                name: 'enabled',
+                on: redirect.enabled,
+            }) }}
+
+            {# Stats (if editing existing) #}
+            {% if not isNew %}
+                <hr>
+                <h2>Statistics</h2>
+                <div class="meta read-only">
+                    <div class="data">
+                        <h5 class="heading">Hit Count</h5>
+                        <div class="value">{{ redirect.hitCount }}</div>
+                    </div>
+                    <div class="data">
+                        <h5 class="heading">Last Hit</h5>
+                        <div class="value">
+                            {% if redirect.lastHit %}
+                                {{ redirect.lastHit|date('M j, Y g:i a') }}
+                            {% else %}
+                                Never
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="data">
+                        <h5 class="heading">Created</h5>
+                        <div class="value">{{ redirect.dateCreated|date('M j, Y g:i a') }}</div>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+
+        <div class="buttons">
+            <button type="submit" class="btn submit">Save</button>
+        </div>
+    </form>
+{% endblock %}

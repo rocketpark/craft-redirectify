@@ -1,0 +1,8 @@
+Source URL,Destination URL,Match Type,Status Code,Enabled,Site ID
+/old-page,/new-page,exact,301,1,
+/old-blog/article,/blog/new-article,exact,301,1,
+/temporary-page,/temp-destination,exact,302,1,
+^/blog/(\d{4})/(.*)$,/articles/$1/$2,regex,301,1,
+/old-category/*,/new-category,regex,301,1,
+/disabled-redirect,/somewhere,exact,301,0,
+/site-specific,/new-location,exact,301,1,2
