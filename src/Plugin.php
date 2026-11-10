@@ -11,6 +11,9 @@ use craft\web\ErrorHandler;
 use craft\events\ExceptionEvent;
 use craft\events\ModelEvent;
 use craft\elements\Entry;
+use craft\db\Query;
+use craft\db\Table;
+use craft\helpers\ElementHelper;
 use craft\console\Application as ConsoleApplication;
 use yii\base\Event;
 use yii\web\HttpException;
@@ -37,6 +40,11 @@ class Plugin extends BasePlugin
      * @var string
      */
     public string $schemaVersion = '1.0.0';
+
+    /**
+     * @var array<string, string|null> Stored URIs captured before entry saves, keyed by "elementId-siteId"
+     */
+    private array $_oldUris = [];
 
     /**
      * @var bool
@@ -125,31 +133,65 @@ class Plugin extends BasePlugin
      */
     protected function registerEntryEventListeners(): void
     {
+        // Capture the stored URI before the entry is saved, since elements
+        // don't keep their previous attribute values
+        Event::on(
+            Entry::class,
+            Entry::EVENT_BEFORE_SAVE,
+            function(ModelEvent $event) {
+                /** @var Entry $entry */
+                $entry = $event->sender;
+
+                if (!$this->shouldTrackUriChange($entry, $event->isNew)) {
+                    return;
+                }
+
+                $this->_oldUris[$entry->id . '-' . $entry->siteId] = (new Query())
+                    ->select('uri')
+                    ->from(Table::ELEMENTS_SITES)
+                    ->where(['elementId' => $entry->id, 'siteId' => $entry->siteId])
+                    ->scalar() ?: null;
+            }
+        );
+
         Event::on(
             Entry::class,
             Entry::EVENT_AFTER_SAVE,
             function(ModelEvent $event) {
-                $settings = $this->getSettings();
-                
-                // Only create redirects if setting is enabled
-                if (!$settings->createEntryRedirects) {
-                    return;
-                }
-                
                 /** @var Entry $entry */
                 $entry = $event->sender;
-                
-                // Only handle existing entries (not new ones)
-                if ($entry->duplicateOf !== null || !$entry->id || $event->isNew) {
+                $key = $entry->id . '-' . $entry->siteId;
+
+                if (!array_key_exists($key, $this->_oldUris)) {
                     return;
                 }
-                
+
+                $oldUri = $this->_oldUris[$key];
+                unset($this->_oldUris[$key]);
+
                 // Check if the URI has changed
-                if ($entry->isFieldDirty('uri')) {
-                    $this->redirects->createRedirectFromEntryUriChange($entry);
+                if ($oldUri && $entry->uri && $oldUri !== $entry->uri) {
+                    $this->redirects->createRedirectFromEntryUriChange($entry, $oldUri);
                 }
             }
         );
+    }
+
+    /**
+     * Whether an entry save should be checked for a URI change
+     */
+    private function shouldTrackUriChange(Entry $entry, bool $isNew): bool
+    {
+        // Only create redirects if setting is enabled
+        if (!$this->getSettings()->createEntryRedirects) {
+            return false;
+        }
+
+        // Only handle existing, canonical entries (not new ones, drafts or revisions)
+        return !$isNew
+            && $entry->id
+            && $entry->duplicateOf === null
+            && !ElementHelper::isDraftOrRevision($entry);
     }
 
     /**

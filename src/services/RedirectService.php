@@ -25,10 +25,10 @@ class RedirectService extends Component
      * Create a redirect when an entry's URI changes
      *
      * @param \craft\elements\Entry $entry
+     * @param string $oldUri The entry's URI before it was saved
      */
-    public function createRedirectFromEntryUriChange($entry): void
+    public function createRedirectFromEntryUriChange($entry, string $oldUri): void
     {
-        $oldUri = $entry->getOldAttribute('uri');
         $newUri = $entry->uri;
         
         // Don't create redirect if URIs are the same or if either is null
@@ -501,11 +501,18 @@ class RedirectService extends Component
             $redirect->enabled = isset($data[4]) ? (bool)$data[4] : true;
             $redirect->siteId = isset($data[5]) && $data[5] !== '' ? (int)$data[5] : null;
             
+            // Validate first so the source URL is normalized and regex patterns are checked
+            if (!$redirect->validate()) {
+                $failed++;
+                $errors[] = "Line " . ($index + 2) . ": " . implode(', ', $redirect->getFirstErrors());
+                continue;
+            }
+
             if ($this->saveRedirect($redirect)) {
                 $success++;
             } else {
                 $failed++;
-                $errors[] = "Line " . ($index + 2) . ": " . implode(', ', $redirect->getErrors());
+                $errors[] = "Line " . ($index + 2) . ": Could not save redirect.";
             }
         }
         

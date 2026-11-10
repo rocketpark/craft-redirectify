@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## 1.1.1 - 2026-11-04
+
+### Fixed
+- Fixed an error ("Calling unknown method: craft\elements\Entry::getOldAttribute()") that broke entry resaves, such as `php craft resave/entries` and resave queue jobs
+- Fixed automatic redirects not being created when an entry's URI changed on a normal save
+- Drafts and revisions no longer trigger automatic redirects
+- Fixed a PHP "Array to string conversion" error when a CSV import row failed, and imported rows are now validated and normalized like redirects saved in the control panel
+
 ## 1.1.0 - 2024-12-10
 
 ### Added
